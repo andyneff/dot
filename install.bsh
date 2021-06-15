@@ -82,3 +82,5 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
     setup
   fi
 done
+
+echo "Install complete" >&2
