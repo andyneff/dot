@@ -8,7 +8,7 @@ cd "${SCRIPT_DIR}"
 
 # 1. Make sure vsi_common is there
 # if ! git config submodule.external/vsi_common.url &> /dev/null; then
-if [ -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
+if [ ! -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
   echo "Initializing vsi_common..." >&2
   git submodule update --recursive --init external/vsi_common
 fi
@@ -40,7 +40,7 @@ if [ ! -e "${SCRIPT_DIR}/dot_repos/60_private_dot_files/custom.bsh" ]; then
     chmod 755 ~/.tmp_git_ssh
     GIT_SSH=~/.tmp_git_ssh git submodule update --recursive --init
     rm ~/.tmp_git_ssh
-  if 
+  fi
 fi
 
 # 5. Issue warnings
