@@ -3,9 +3,47 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+
+cd "${SCRIPT_DIR}"
+
+# 1. Make sure vsi_common is there
+# if ! git config submodule.external/vsi_common.url &> /dev/null; then
+if [ -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
+  echo "Initializing vsi_common..." >&2
+  git submodule update --recursive --init external/vsi_common
+fi
+
+# 2. Load settings and vsi modules
 source "${SCRIPT_DIR}/dot.env"
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
+# 3. Handle your git server ssh key
+if [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
+  echo "You do not have your git server ssh key setup. I will generate one for you" >&2
+  ssh-keygen -t rsa -b 4096 -f "${DOT_GIT_SERVER_SSH_KEY}"
+  if ssh-keygen -y -P "" -f "${DOT_GIT_SERVER_SSH_KEY}" &> /dev/null; then
+    rm "${DOT_GIT_SERVER_SSH_KEY}"
+    echo "You did not enter a passphrase, this isn't secure. Try again" >&2
+    exit 2
+  fi
+fi
+
+# 4. Clone the rest of the submodules
+# if ! git config submodule.dot_repos/60_private_dot_files.url &> /dev/null; then
+if [ ! -e "${SCRIPT_DIR}/dot_repos/60_private_dot_files/custom.bsh" ]; then
+  source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
+  source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+  if meet_requirements "$(git_version)" '>=2.1.0'; then
+    GIT_SSH_COMMAND="ssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null" git submodule update --recursive --init
+  else
+    printf "#!/usr/bin/env sh\nssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null \"\${@}\"\n" > ~/.tmp_git_ssh    
+    chmod 755 ~/.tmp_git_ssh
+    GIT_SSH=~/.tmp_git_ssh git submodule update --recursive --init
+    rm ~/.tmp_git_ssh
+  if 
+fi
+
+# 5. Issue warnings
 if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   if ! "${SYSTEMROOT}/system32/whoami.exe" //groups | grep -q "S-1-5-32-544.*Enabled group"; then
     # In Windows, you need Admin for mklink (or Developer Mode)
@@ -13,12 +51,13 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   fi
 fi
 
+# 6. Install files!
 for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
     path_part=$(relative_path "$dotfile" "${files_dir}/files")
 
     target=~/"${path_part}"
-    copy_target="${BACKUP_DIR}/${path_part}"
+    copy_target="${DOT_BACKUP_DIR}/${path_part}"
 
     # stash old dotfiles
     if [ -e "${target}" ]; then
@@ -38,6 +77,7 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   done < <(find "${files_dir}/files" -type f -print0)
 
   if [ -r "${files_dir}/custom.bsh" ]; then
+    unset setup
     source "${files_dir}/custom.bsh"
     setup
   fi

@@ -9,7 +9,7 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
     path_part=$(relative_path "${dotfile}" "${files_dir}/files")
 
     target=~/"${path_part}"
-    copy_target="${BACKUP_DIR}/${path_part}"
+    copy_target="${DOT_BACKUP_DIR}/${path_part}"
 
     # create new symbolic links
     if [ -L "${target}" ]; then
@@ -24,6 +24,7 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   done < <(find "${files_dir}/files" -type f -print0)
 
   if [ -r "${files_dir}/custom.bsh" ]; then
+    unset unsetup
     source "${files_dir}/custom.bsh"
     unsetup
   fi
