@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+set -eu
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+
+backup_dir="${SCRIPT_DIR}/bak"
+
+source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
+
+function symlink()
+{
+  if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
+    # In Windows, you need Admin for this (or Developer Mode)
+    cmd //c mklink "$(cygpath -w "${2}")" "$(cygpath -w "${1}")"
+  else
+    ln -s "${1}" "${2}"
+  fi
+}
+
+if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
+  if ! "${SYSTEMROOT}/system32/whoami.exe" //groups | grep -q "S-1-5-32-544.*Enabled group"; then
+    echo "You are not running as root, mklink will probably fail" >&2
+  fi
+fi
+
+# for dotfile in "$SCRIPT_DIR/files"/*; do
+while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
+  # path_part=$(python -c "import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))" "$dotfile" "${SCRIPT_DIR}/files")
+  path_part=$(relative_path "$dotfile" "${SCRIPT_DIR}/files")
+
+  target=~/"${path_part}"
+  copy_target="${backup_dir}/${path_part}"
+
+  # stash old dotfiles
+  if [[ -e ${target} ]]; then
+    if [[ ! -e ${copy_target} ]] && [[ ! -L ${target} ]]; then
+      mkdir -p "$(dirname "${copy_target}")"
+      cp "$target" "$copy_target"
+    fi
+    rm "$target"
+  fi
+
+  mkdir -p "$(dirname "${target}")"
+
+  # create new symbolic links
+  symlink "$dotfile" "$target"
+done < <(find "${SCRIPT_DIR}/files" -type f -print0)
+
+function add_if()
+{
+  # $1 filename
+  # $2 grep pattern (null string for always)
+  # $3 string
+
+  if [ "${2}" = "" ] || ! grep -q "${2}" "${1}" &> /dev/null; then
+    if [ -s "${1}" ]; then
+      # append to end of the file, always makes it its own line, and always
+      # ends with a newline
+      sed -i '$r/dev/stdin' "${1}" <<< "${3}"
+    else
+      # Sed doesn't work on empty files
+      echo "${3}" > "${1}"
+    fi
+  fi
+}
+
+add_if ~/.bashrc .personal.bashrc \
+'if [[ -r ~/.personal.bashrc ]]; then
+  . ~/.personal.bashrc
+fi'
+
+add_if ~/.ssh/config personal.config \
+'Match all
+  Include personal.config'
+
+openssh_version
+if [ "${ssh_version[0]}" -ge "8" ]; then
+  add_if ~/.ssh/config personal.8.config '  Include personal.8.config'
+fi
+
+add_if ~/.gitconfig .personal.gitconfig '[include]
+  path = ~/.personal.gitconfig'
+if meet_requirements "$(git_version)" '>=2.11.4'; then
+  add_if ~/.gitconfig .personal.2.11.4.gitconfig '[include]
+  path = ~/.personal.2.11.4.gitconfig'
+fi
+
+if [ "${OS-}" = "Windows_NT" ]; then
+  add_if ~/.gitconfig .personal.windows.gitconfig '[include]
+  path = ~/.personal.windows.gitconfig'
+fi
+
+if [[ ! -x ~/bin/deviceQuery ]]; then
+  if [ "${OS-}" != "Windows_NT" ]; then
+    wget https://www.vsi-ri.com/bin/deviceQuery -O ~/bin/deviceQuery || \
+      curl -L https://www.vsi-ri.com/bin/deviceQuery -o ~/bin/deviceQuery
+    chmod 755 ~/bin/deviceQuery
+  fi
+fi
+
+### Special permissions
+
+chmod 600 ~/.ssh/config
+chmod 600 "${SCRIPT_DIR}/files/.ssh/personal.config"
+chmod 600 "${SCRIPT_DIR}/files/.ssh/personal.8.config"
