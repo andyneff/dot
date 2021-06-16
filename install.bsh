@@ -26,6 +26,11 @@ if [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
     echo "You did not enter a passphrase, this isn't secure. Try again" >&2
     exit 2
   fi
+  echo "Please add the following key to your Git Server:" >&2
+  echo
+  cat "${DOT_GIT_SERVER_SSH_KEY}.pub"
+  echo
+  read -sn 1 -p "Press any key to continue"
 fi
 
 # 4. Clone the rest of the submodules

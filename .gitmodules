@@ -4,6 +4,8 @@
 [submodule "dot_repos/20_dot_files"]
 	path = dot_repos/20_dot_files
 	url = https://github.com/andyneff/dot_files.git
+	branch = main
 [submodule "dot_repos/60_private_dot_files"]
 	path = dot_repos/60_private_dot_files
 	url = git@github.com:andyneff/dot_files_private.git
+	branch = main
