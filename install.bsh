@@ -6,6 +6,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
 cd "${SCRIPT_DIR}"
 
+# 0. Dependencies
+if ! command -v find &> /dev/null; then
+  echo "Command \"find\" not found, please install find" >&2
+  exit 2
+fi
+
 # 1. Make sure vsi_common is there
 # if ! git config submodule.external/vsi_common.url &> /dev/null; then
 if [ ! -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
