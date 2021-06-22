@@ -37,9 +37,8 @@ The general idea is for you to fork this repo, but still be able to get the upda
 1. `git clone https://github.com/yourfork/dot.git ~/.dot` (Note, `~/.dot` can be anywhere you want)
 1. `cd ~/.dot`
 1. `git rm dot_repos`
-1. `git submodule add -b main git@github.com:username/dot_files.git ./dot_repos/50_my_files`
+1. `git submodule add git@github.com:username/dot_files.git ./dot_repos/50_my_files`
     - Name `50_my_files` whatever you want, but it must be in the `dot_repos` directory.
-    - `main` is replaced with the branch name you want to track.
     - Multiple dot repos are processed in alphabetical order)
 1. (optional) Change the url in the git clone command above ⬆ in `README.md`
 1. In your submodules you _must_ have
@@ -53,7 +52,7 @@ The general idea is for you to fork this repo, but still be able to get the upda
     1. `custom.bsh` - file where you can define a `setup` and `unsetup` function that is called when installing/uninstalling. This is where you can handle all sorts of custom actions that are not "just symlink this file in", like appending lines to config files, etc...
     1. Any other files you want, that `custom.bsh` can use, or licenses, read me, etc...
 
-The purpose of this particular structure is to allow you to make a simple commit to your fork, which replace the submodules with yours. Then every time this main fork of the main submodule is updated, all you have to do is rebase/merge those new changes, and still easily maintain all of _your_ files and your custom scripts
+This will allow you to make a minimal commit to your fork, which replace my submodules with yours. Then every time this main fork of the main submodule is updated, all you have to do is rebase/merge those new changes, and still easily maintain all of _your_ files and your custom scripts.
 
 # FAQ
 
