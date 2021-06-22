@@ -70,25 +70,9 @@ fi
 # 6. Install files!
 for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
-    path_part=$(relative_path "$dotfile" "${files_dir}/files")
+    path_part=$(relative_path "${dotfile}" "${files_dir}/files")
 
-    target=~/"${path_part}"
-    copy_target="${DOT_BACKUP_DIR}/${path_part}"
-
-    # stash old dotfiles
-    if [ -e "${target}" ]; then
-      if [ ! -e "${copy_target}" ] && [ ! -L "${target}" ]; then
-        mkdir -p "$(dirname "${copy_target}")"
-        mv "${target}" "${copy_target}"
-      else
-        rm "${target}"
-      fi
-    fi
-
-    mkdir -p "$(dirname "${target}")"
-
-    # create new symbolic links
-    symlink "${dotfile}" "${target}"
+    backup_and_replace "${dotfile}" ~/"${path_part}" "${DOT_BACKUP_DIR}/${path_part}"
 
   done < <(find "${files_dir}/files" -type f -print0)
 
