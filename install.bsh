@@ -20,14 +20,19 @@ if [ ! -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
 fi
 
 # 2. Load settings and vsi modules
+for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
+  if [ -r "${files_dir}/dot.env" ]; then
+    source "${files_dir}/dot.env"
+  fi
+done
 source "${SCRIPT_DIR}/dot.env"
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
 # 3. Handle your git server ssh key
-if [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
+if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
   echo "You do not have your git server ssh key setup. I will generate one for you" >&2
-  ssh-keygen -t rsa -b 4096 -f "${DOT_GIT_SERVER_SSH_KEY}"
-  if ssh-keygen -y -P "" -f "${DOT_GIT_SERVER_SSH_KEY}" &> /dev/null; then
+  "${DOT_GIT_SSH_KEY_GEN}" -t "${DOT_GIT_SSH_KEY_TYPE}" ${DOT_GIT_SSH_KEY_OTHER_ARGS[@]+"${DOT_GIT_SSH_KEY_OTHER_ARGS[@]}"} -f "${DOT_GIT_SERVER_SSH_KEY}"
+  if "${DOT_GIT_SSH_KEY_GEN}" -y -P "" -f "${DOT_GIT_SERVER_SSH_KEY}" &> /dev/null; then
     rm "${DOT_GIT_SERVER_SSH_KEY}"
     echo "You did not enter a passphrase, this isn't secure. Try again" >&2
     exit 2
@@ -90,7 +95,10 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   if [ -r "${files_dir}/custom.bsh" ]; then
     unset setup
     source "${files_dir}/custom.bsh"
-    setup
+    # Make sure we don't accidentally run a command called setup
+    if [ "$(type -t setup)" = "function" ]; then
+      setup
+    fi
   fi
 done
 

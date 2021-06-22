@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+
+for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
+  if [ -r "${files_dir}/dot.env" ]; then
+    source "${files_dir}/dot.env"
+  fi
+done
 source "${SCRIPT_DIR}/dot.env"
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
@@ -26,7 +32,10 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   if [ -r "${files_dir}/custom.bsh" ]; then
     unset unsetup
     source "${files_dir}/custom.bsh"
-    unsetup
+    # Make sure we don't accidentally run a command called unsetup
+    if [ "$(type -t unsetup)" = "function" ]; then
+      unsetup
+    fi
   fi
 done
 
