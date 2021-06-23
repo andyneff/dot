@@ -64,6 +64,7 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   if ! "${SYSTEMROOT}/system32/whoami.exe" //groups | grep -q "S-1-5-32-544.*Enabled group"; then
     # In Windows, you need Admin for mklink (or Developer Mode)
     echo "You are not running with admin rights, mklink will probably fail" >&2
+    echo "export \"DOT_SKIP_SYMLINK=1\" to skip the symlinks, or \"FORCE_LN=1\" to copy" >&2
   fi
 fi
 
@@ -71,9 +72,7 @@ fi
 for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
     path_part=$(relative_path "${dotfile}" "${files_dir}/files")
-
     backup_and_replace "${dotfile}" ~/"${path_part}" "${DOT_BACKUP_DIR}/${path_part}"
-
   done < <(find "${files_dir}/files" -type f -print0)
 
   if [ -r "${files_dir}/custom.bsh" ]; then
