@@ -85,7 +85,7 @@ function backup_and_replace()
 function load_dot_env()
 {
   set -a
-  for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/* "${SCRIPT_DIR}/dot.env"; do
+  for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/* "${SCRIPT_DIR}"; do
     if [ -r "${files_dir}/dot.env" ]; then
       source "${files_dir}/dot.env"
     fi

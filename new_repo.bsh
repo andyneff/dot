@@ -103,8 +103,7 @@ EOF
   mkdir -p files
 
   # 8. submodule
-  if [ ! -e external/dot/install.bsh ]; then
-    mkdir -p external/dot
+  if ! git submodule status external/dot &> /dev/null; then
     git submodule add https://github.com/andyneff/dot.git external/dot
   fi
 

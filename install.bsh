@@ -10,7 +10,6 @@ if [ -z "${DOT_DIR+set}" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-source "${SCRIPT_DIR}/dot_functions.bsh"
 
 # 0. Dependencies
 if ! command -v find &> /dev/null; then
@@ -27,7 +26,10 @@ pushd "${SCRIPT_DIR}" &> /dev/null
   fi
 popd &> /dev/null
 
-# 2. Load settings and vsi modules
+
+# 2. Load settings and modules
+source "${SCRIPT_DIR}/dot_functions.bsh"
+
 load_dot_env
 
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
