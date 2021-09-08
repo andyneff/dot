@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+# Usage: curl -L https://raw.githubusercontent.com/andyneff/dot/main/new_repo.bsh | bash
+
+set -eu
+
+# 1. git repo
+if [ ! -d .git ]; then
+  git init .
+fi
+
+# 2. install.bsh
+if [ ! -e install.bsh ]; then
+  cat - << EOF > install.bsh
+#!/usr/bin/env bash
+
+set -eu
+
+export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+
+# 1. Make sure dot is there
+pushd "${DOT_DIR}" &> /dev/null
+  if [[ $(git submodule status external/dot) =~ ^- ]]; then
+    echo "Initializing dot repo..." >&2
+    git submodule update --recursive --init external/dot
+  fi
+popd &> /dev/null
+
+# 2. Call the universal install script
+"${DOT_DIR}/external/dot/install.bsh" ${@+"${@}"}
+EOF
+  chmod 755 install.bsh
+else
+  echo "Skipping install.bsh, you already have one"
+fi
+
+
+# 3. dot.env
+if [ ! -e dot.env ]; then
+  cat - << EOF > dot.env
+# You may delete this if you don't use it.
+
+# Put custom environment variables settings here, e.g.:
+# DOT_GIT_SERVER_SSH_KEY=~/.ssh/id_rsa_gh
+EOF
+else
+  echo "Skipping dot.env, you already have one"
+fi
+
+# 4. custom.bsh
+if [ ! -e custom.bsh ]; then
+  cat - << EOF > custom.bsh
+# You may delete this if you don't use it.
+
+function setup()
+{
+  # Put custom install steps here
+}
+
+function unsetup()
+{
+  # Put custom uninstall steps here, basicly to undo any custom steps
+  # you added in setup
+}
+EOF
+else
+  echo "Skipping custom.bsh, you already have one"
+fi
+
+# 5. README.md
+if [ ! -e README.md ]; then
+  cat - << EOF > README.md
+TODO
+EOF
+else
+  echo "Skipping README.md, you already have one"
+fi
+
+# 6. files
+mkdir -p files
+
+# 7. submodule
+if [ ! -e external/dot/install.bsh ]; then
+  mkdir -p external/dot
+  git submodule add https://github.com/andyneff/dot.git external/dot
+fi
+
+# Message to user
+cat - << EOF
+Your dot repo is now setup, start copying files to your files directory, then run install.bsh
+
+For example:
+
+cp ~/.bashrc files/.bashrc
+mkdir files/.ssh
+cp ~/.ssh/config files/.ssh/config
+
+Don't forget to add and commit the files!
+EOF

@@ -2,9 +2,14 @@
 
 set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+if [ -z "${DOT_DIR+set}" ]; then
+  echo "ERROR: DOT_DIR is not set. It looks like you tried to call this script directly." >&2
+  echo "The intended use of this script is to be called by your dot files install.bsh" >&2
+  echo "See: new_repos.bsh" >&2
+  exit 2
+fi
 
-cd "${SCRIPT_DIR}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
 # 0. Dependencies
 if ! command -v find &> /dev/null; then
@@ -14,17 +19,20 @@ fi
 
 # 1. Make sure vsi_common is there
 # if ! git config submodule.external/vsi_common.url &> /dev/null; then
-if [ ! -e "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh" ]; then
-  echo "Initializing vsi_common..." >&2
-  git submodule update --recursive --init external/vsi_common
-fi
+pushd "${SCRIPT_DIR}" &> /dev/null
+  if [[ $(git submodule status external/vsi_common) =~ ^- ]]; then
+    echo "Initializing vsi_common..." >&2
+    git submodule update --recursive --init external/vsi_common
+  fi
+popd &> /dev/null
 
 # 2. Load settings and vsi modules
-for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
+for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
   if [ -r "${files_dir}/dot.env" ]; then
     source "${files_dir}/dot.env"
   fi
 done
+
 source "${SCRIPT_DIR}/dot.env"
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
@@ -45,14 +53,13 @@ if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
 fi
 
 # 4. Clone the rest of the submodules
-# if ! git config submodule.dot_repos/60_private_dot_files.url &> /dev/null; then
-if [ ! -e "${SCRIPT_DIR}/dot_repos/60_private_dot_files/custom.bsh" ]; then
+if git submodule status | grep -e - &>/dev/null; then
   source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
   source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
   if meet_requirements "$(git_version)" '>=2.1.0'; then
     GIT_SSH_COMMAND="ssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null" git submodule update --recursive --init
   else
-    printf "#!/usr/bin/env sh\nssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null \"\${@}\"\n" > ~/.tmp_git_ssh    
+    printf "#!/usr/bin/env sh\nssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null \"\${@}\"\n" > ~/.tmp_git_ssh
     chmod 755 ~/.tmp_git_ssh
     GIT_SSH=~/.tmp_git_ssh git submodule update --recursive --init
     rm ~/.tmp_git_ssh
@@ -69,7 +76,10 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
 fi
 
 # 6. Install files!
-for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
+for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
+  if [ ! -d "${files_dir}" ]; then
+    continue
+  fi
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
     path_part=$(relative_path "${dotfile}" "${files_dir}/files")
     backup_and_replace "${dotfile}" ~/"${path_part}" "${DOT_BACKUP_DIR}/${path_part}"
@@ -84,5 +94,7 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
     fi
   fi
 done
+
+chmod "${DOT_DIR_PERMISSIONS}" "${DOT_DIR}"
 
 echo "Install complete" >&2
