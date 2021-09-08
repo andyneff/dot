@@ -60,16 +60,15 @@ EOF
   cat - << 'EOF' | write_new_file custom.bsh
 # You may delete this if you don't use it.
 
-function setup()
-{
-  # Put custom install steps here
-}
+# function setup()
+# {
+#   echo "Put custom install steps here"
+# }
 
-function unsetup()
-{
-  # Put custom uninstall steps here, basicly to undo any custom steps
-  # you added in setup
-}
+# function unsetup()
+# {
+#   echo "Put custom uninstall steps here, basically to undo any custom steps you added in setup"
+# }
 EOF
 
   # 5. README.md
