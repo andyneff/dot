@@ -12,11 +12,11 @@ To use this, you will be using two git repos. You will have your personal "dot f
 
 - Installs files in any directory structure you want in your home directory
 - Use symlinks so that changes are reflected in the original repo
-  - Symlink feature requires admin privileges on Windows 10
+    - Symlink feature requires admin privileges on Windows 10
 - Custom install/uninstall steps to support scenarios more complex than a symlink
 - Backs up existing files before they are replaced
-  - Restores using the backup files on uninstall
-  - Continues to backup every ~unique~ version of a file (in case it is replaced/changed outside of dot files). This is safety mechanism so that things are never lost by accident.
+    - Restores using the backup files on uninstall
+    - Continues to backup every ~unique~ version of a file (in case it is replaced/changed outside of dot files). This is safety mechanism so that things are never lost by accident.
 
 # Getting started
 
@@ -40,14 +40,6 @@ Remember not to include any secret information in there (like your ssh private k
 1. `git clone https://github.com/andyneff/dot.git ~/.dot`
 2. `~/.dot/install.bsh`
     - The script will walk you trough creating your ssh key on your computer, if you haven't, and cloning the submodules, and then finally installing all your dot files.
-    - On Windows 10, this needs to be done in bash running with admin privileges due to symlink limitations (Right click "Git Bash" and select "More" -> "Run as Administrator")
-    - If you are unable to run with admin privileges, you will have to run: `FORCE_LN=1 ~/.dot/install.bsh`
-        - However, this will copy the files instead of symlinking them, making committing changing back to the repo harder
-        - Note this can be accomplished editing the `dot.env` file in your dot_repos with something like:
-
-              if [ "$(hostname)" = "problem computer name here" ]; then
-                FORCE_LN=1
-              fi
 
 # Updating
 
@@ -59,10 +51,10 @@ Remember not to include any secret information in there (like your ssh private k
 
 If the installation script errors for some reason, and cannot be resumed, or you just want it to remove all the symlinks for you, you can run
 
-- `~/.dot/external/dot/uninstall.bsh`
+- `~/.dot/uninstall.bsh`
     - Note: This will only remove symlinks for files that are still in your dot_repos.
     - This will also call all `unsetup` functions in your `custom.bsh` files.
-    - Any files that were backed up during installation, will be replaces during uninstallation.
+    - Any files that were backed up during installation, will be restored during uninstallation.
 
 # Advanced
 
@@ -96,3 +88,12 @@ Remember, you still shouldn't add information like your ssh private keys, even i
     1. It will print out the public key to the screen, so you can go to your git server and add it, before continuing
     1. Now the install script will recursively checkout all your submodules so that can use both `https` and `git@` protocols in your submodules.
     1. Then the rest of the install script runs.
+1. I keep getting `You are not running with admin rights, mklink will probably fail` warning on windows.
+    - On Windows 10, you need to call `install.bsh` in bash running with admin privileges due to symlink limitations (Right click "Git Bash" and select "More" -> "Run as Administrator")
+    - If you are unable to run with admin privileges, you will have to run: `FORCE_LN=1 ~/.dot/install.bsh`
+        - However, this will copy the files instead of symlinking them, making committing changing back to the repo harder
+        - Note this can be accomplished editing the `dot.env` file in your dot_repos with something like:
+
+              if [ "$(hostname)" = "problem computer name here" ]; then
+                FORCE_LN=1
+              fi
