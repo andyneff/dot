@@ -78,6 +78,22 @@ function backup_and_replace()
 }
 
 #**
+# .. function:: load_dot_env
+#
+# **Internal function:** Load and exports the `dot.env` files
+#**
+function load_dot_env()
+{
+  set -a
+  for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/* "${SCRIPT_DIR}/dot.env"; do
+    if [ -r "${files_dir}/dot.env" ]; then
+      source "${files_dir}/dot.env"
+    fi
+  done
+  set +a
+}
+
+#**
 # .. function:: add_if
 #
 # When trying to write a custom script to modify configuration files, you will run into situations where you will want to add a block of code if a string doesn't already exist in the file. There are several corner cases to cover here, does the files exist, does it already end in a newline, etc... This function will add a string if the condition is not met, guaranteeing it is not combine with the last line of the file and make sure the files ends in a newline if the file is modified.

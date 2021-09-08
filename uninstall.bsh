@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+if [ -z "${DOT_DIR+set}" ]; then
+  echo "ERROR: DOT_DIR is not set. It looks like you tried to call this script directly." >&2
+  echo "The intended use of this script is to be called by your dot files install.bsh" >&2
+  echo "See: new_repos.bsh" >&2
+  exit 2
+fi
 
-for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
-  if [ -r "${files_dir}/dot.env" ]; then
-    source "${files_dir}/dot.env"
-  fi
-done
-source "${SCRIPT_DIR}/dot.env"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+source "${SCRIPT_DIR}/dot_functions.bsh"
+
+load_dot_env
+
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
-for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
+for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
     path_part=$(relative_path "${dotfile}" "${files_dir}/files")
 
@@ -20,7 +24,7 @@ for files_dir in "${SCRIPT_DIR}/dot_repos"/*; do
     # create new symbolic links
     if [ -L "${target}" ]; then
       rm "${target}"
-    
+
       if [ -e "${copy_target}" ]; then
         mv "${copy_target}" "${target}"
       fi

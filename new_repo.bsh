@@ -92,6 +92,13 @@ EOF
 bak
 EOF
 
+  cat - << 'EOF' | write_new_file uninstall.bsh
+#!/usr/bin/env bash
+export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+"${DOT_DIR}/external/dot/uninstall.bsh" ${@+"${@}"}
+EOF
+  chmod 755 uninstall.bsh
+
   # 7. files
   mkdir -p files
 
