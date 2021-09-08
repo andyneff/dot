@@ -58,13 +58,31 @@ If the installation script errors for some reason, and cannot be resumed, or you
 
 # Advanced
 
-## custom.bsh
-
-TODO
-
 ## dot.env
 
-TODO
+All of the variables set in the "dot repo" `dot.env` files, can be overridden by simply setting them in your person dot files repo very own `dot.env` file. For example:
+
+```bash
+DOT_GIT_SSH_KEY_TYPE=ed25519
+```
+
+No fancy bash expressions needed. This allows you can permanently set that value just for your dot files, and never have to modify the "dot repo". However, this is a bash source file, so any bash expressions are allowed, such as:
+
+```
+if [ "$(hostname)" = "cat" ]; then
+  # The computer named cat must use DSA cause I made this up
+  DOT_GIT_SSH_KEY_TYPE=dsa
+fi
+```
+
+## custom.bsh
+
+Currently, the install script automatically symlinks, in the exact same directory structure as your `files` directory. Sometimes you need more, you need to edit files, and insert a line, or you just want to download the latest version of `jq` and put it in your `~/bin` directory. Any custom actions can be added to your `custom.bsh` file
+
+- `setup` - If you define a function called `setup` in `custom.bsh`, it will be called after the `files` have been installed.
+- `unsetup` - If there are any changes that have to be undone when `uninstall.bsh` is called, they can be added to a function called `unsetup`
+
+**Note:** This is an advanced feature indented for people who are comfortable writing `bash` code
 
 ## additional_repos
 
