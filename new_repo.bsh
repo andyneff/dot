@@ -1,17 +1,33 @@
 #!/usr/bin/env bash
 
-# Usage: curl -L https://raw.githubusercontent.com/andyneff/dot/main/new_repo.bsh | bash
+# Usage: bash <(curl -L https://raw.githubusercontent.com/andyneff/dot/main/new_repo.bsh)
 
-set -eu
+#**
+# .. function:: write_new_file
+#
+# Pipes stdin to a file name, if the file does not already exist
+#
+# :Arguments: ``$1`` - Filename to use for
+# :Input: ``stdin`` - Content of file
+#**
+function write_new_file()
+{
+  if [ -e "${1}" ]; then
+    echo "Skipping ${1}, you already have one" >&2
+  else
+    cat - > "${1}"
+  fi
+}
 
-# 1. git repo
-if [ ! -d .git ]; then
-  git init .
-fi
+function setup_new_dot_repo()
+{
+  # 1. git repo
+  if [ ! -d .git ]; then
+    git init .
+  fi
 
-# 2. install.bsh
-if [ ! -e install.bsh ]; then
-  cat - << EOF > install.bsh
+  # 2. install.bsh
+  cat - << 'EOF' | write_new_file install.bsh
 #!/usr/bin/env bash
 
 set -eu
@@ -30,26 +46,18 @@ popd &> /dev/null
 "${DOT_DIR}/external/dot/install.bsh" ${@+"${@}"}
 EOF
   chmod 755 install.bsh
-else
-  echo "Skipping install.bsh, you already have one"
-fi
 
 
-# 3. dot.env
-if [ ! -e dot.env ]; then
-  cat - << EOF > dot.env
+  # 3. dot.env
+  cat - << 'EOF' | write_new_file dot.env
 # You may delete this if you don't use it.
 
 # Put custom environment variables settings here, e.g.:
 # DOT_GIT_SERVER_SSH_KEY=~/.ssh/id_rsa_gh
 EOF
-else
-  echo "Skipping dot.env, you already have one"
-fi
 
-# 4. custom.bsh
-if [ ! -e custom.bsh ]; then
-  cat - << EOF > custom.bsh
+  # 4. custom.bsh
+  cat - << 'EOF' | write_new_file custom.bsh
 # You may delete this if you don't use it.
 
 function setup()
@@ -63,30 +71,38 @@ function unsetup()
   # you added in setup
 }
 EOF
-else
-  echo "Skipping custom.bsh, you already have one"
-fi
 
-# 5. README.md
-if [ ! -e README.md ]; then
-  cat - << EOF > README.md
-TODO
+  # 5. README.md
+  cat - << 'EOF' | write_new_file README.md
+# My dot files
+
+Here are my dot files
+
+See https://github.com/andyneff/dot for more info, including how to use this pattern for yourself.
+
+# Setting up on a new computer
+
+1. `git clone https://{git server repo}.git ~/.dot`
+2. `~/.dot/install.bsh`
+3. There is no step 3
 EOF
-else
-  echo "Skipping README.md, you already have one"
-fi
 
-# 6. files
-mkdir -p files
+  # 6. .gitignore
+  cat - << 'EOF' | write_new_file .gitignore
+bak
+EOF
 
-# 7. submodule
-if [ ! -e external/dot/install.bsh ]; then
-  mkdir -p external/dot
-  git submodule add https://github.com/andyneff/dot.git external/dot
-fi
+  # 7. files
+  mkdir -p files
 
-# Message to user
-cat - << EOF
+  # 8. submodule
+  if [ ! -e external/dot/install.bsh ]; then
+    mkdir -p external/dot
+    git submodule add https://github.com/andyneff/dot.git external/dot
+  fi
+
+  # Message to user
+  cat - << 'EOF'
 Your dot repo is now setup, start copying files to your files directory, then run install.bsh
 
 For example:
@@ -97,3 +113,10 @@ cp ~/.ssh/config files/.ssh/config
 
 Don't forget to add and commit the files!
 EOF
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ] || [ "$(basename "${BASH_SOURCE[0]}")" = "${0}" ]; then
+  set -eu
+  setup_new_dot_repo "${@}"
+  exit $?
+fi

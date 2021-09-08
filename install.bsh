@@ -10,6 +10,7 @@ if [ -z "${DOT_DIR+set}" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+source "${SCRIPT_DIR}/dot_functions.bsh"
 
 # 0. Dependencies
 if ! command -v find &> /dev/null; then
@@ -27,13 +28,15 @@ pushd "${SCRIPT_DIR}" &> /dev/null
 popd &> /dev/null
 
 # 2. Load settings and vsi modules
+set -a
 for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
   if [ -r "${files_dir}/dot.env" ]; then
     source "${files_dir}/dot.env"
   fi
 done
-
 source "${SCRIPT_DIR}/dot.env"
+set +a
+
 source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
 # 3. Handle your git server ssh key
