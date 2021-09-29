@@ -2,7 +2,15 @@
 
 #*# dot_functions
 
+if [ -z "${SCRIPT_DIR+set}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+fi
+
 source "${SCRIPT_DIR}/external/vsi_common/linux/string_tools.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/compat.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/aliases.bsh"
 
 #**
 # =============
@@ -165,5 +173,151 @@ function add_after_if()
     # Make sure the prior line exists
     add_if "${1}" "${before_line}" "${2}"
     sed -i "s|${before_line}.*|&\n${3}|" "${1}"
+  fi
+}
+
+#**
+# .. function:: validate_ssh_key
+#
+# Check to see if an SSH key had a passphrase on it. If it does not, delete the file so that it cannot be used.
+#
+# SSH keys should not be passphraseless, that's what ssh agent is for. This function is used to enforce that.
+#
+# :Arguments: * ``$1`` - Path of ssh key
+#**
+function validate_ssh_key()
+{
+  if "${DOT_GIT_SSH_KEY_GEN}" -y -P "" -f "${1}" &> /dev/null; then
+    if grep -q "-----BEGIN OPENSSH PRIVATE KEY-----" "${1}" &> /dev/null; then
+      rm "${1}"
+    else
+      echo "Warning: The file \"${1}\" does not appear to be an ssh key"
+      echo "it's been renamed to \"${1}.delete_me\""
+      mv "${1}" "${1}.delete_me"
+    fi
+    echo "You did not enter a passphrase, this isn't secure. Try again" >&2
+    return 2
+  fi
+}
+
+#**
+# .. function: gpg_key_batch
+#
+# Some good (I hope?) defaults for generating GPG keys. If you want to override this, just define your own :func:`gpg_key_batch`. See https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html for more information
+#
+# :Parameters: * ``$1`` - Real Name/Comment
+#              * ``$2`` - Email address
+#**
+function gpg_key_batch()
+{
+  cat - << EOF
+Key-Type: RSA
+Key-Length: 4096
+Subkey-Type: RSA
+Subkey-Length: 4096
+Subkey-Usage: sign encrypt auth
+Expire-Date: 5y
+Name-Real: ${1}
+Name-Comment: ${1}
+Name-Email: ${2}
+EOF
+
+  if meet_requirements "${gpg2_version-$(gpg_version)}" '>=2.1'; then
+    echo "Key-Usage: cert"
+    echo "%no-protection"
+  else
+    echo "Key-Usage: sign"
+    # 2.0 can't have no-protection, but also doesn't need it, the passphrase
+    # will be blank by default
+  fi
+}
+
+#**
+# .. function: gen_gpg_key
+#
+# Generate a gpg key based on :func:`gpg_key_batch`. While the passphase is initially unset, it will have you change it.
+#
+# (GPG 2.1 or newer) It will check to see if an GPG key had a passphrase on it. If it does not, the key is **automatically** deleted. GPG keys should not be passphraseless, that's what gpg agent is for.
+#
+# :Arguments: * ``$1`` - Real name (also used for comment)
+#             * ``$2`` - Email address
+#
+# .. note:
+#
+#    Only tested against GPG 2.0 or 2.1, that was hard enough
+#**
+function gen_gpg_key()
+{
+  source "${VSI_COMMON_DIR}/linux/colors.bsh"
+
+  local gpg2_version="$(gpg_version)"
+
+  # works on rhel/centos/fedora, because it uses this
+  # http://prod-exe.icecube.wisc.edu/python/python2.6.Linux-x86_64.gcc-4.4.4/bin/pinentry
+  local PINENTRY_BINARY
+  PINENTRY_BINARY="$(command -v pinentry-tty 2> /dev/null)" || :
+  if [ -z "${PINENTRY_BINARY:+set}" ]; then
+    PINENTRY_BINARY="$(command -v pinentry-curses 2> /dev/null)" || :
+  fi
+
+  if [ -n "${PINENTRY_BINARY:+set}" ]; then
+    export PINENTRY_BINARY
+
+    if meet_requirements "${gpg2_version}" '>=2.1'; then
+      gpgconf --kill gpg-agent || :
+    else
+      gpg-connect-agent killagent /bye || :
+    fi
+  fi
+
+  local fingerprint=$(gpg_key_batch "${1}" "${2}" | gpg2 --status-fd 1 --gen-key --batch)
+  if [[ ${fingerprint} =~ KEY_CREATED\ .\ ([a-fA-F0-9]{40}) ]]; then
+    fingerprint="${BASH_REMATCH[1]}"
+  else
+    echo "Something went wrong:"
+    declare -p fingerprint
+    return 1
+  fi
+
+  if meet_requirements "${gpg2_version}" '>=2.1'; then
+    echo
+    echo "${YELLOW}GPG 2.1 may have you set your primary key passphrase first, then it"
+    echo "  will let you set you subkey passphrase. You ${ITALIC}can${RESET_ITALIC} use the same passphrase.${RESET}"
+    echo
+  fi
+
+  if ! gpg2 --passwd "${fingerprint}"; then
+    echo "You did not change the password"
+    echo "You probably didn't enter the original password (which was blank) correctly"
+    echo "Please try again"
+    gpg2 --batch --yes --delete-secret-key "${fingerprint}"
+    gpg2 --batch --yes --delete-key "${fingerprint}"
+    return 1
+  fi
+
+  if meet_requirements "${gpg2_version}" '>=2.1'; then
+    # Nothing should get exported successfully. This is the best way to test if primary or sub key is unprotected
+    if [ "$(gpg2 --pinentry-mode loopback --export-secret-keys --passphrase '' --armor "${fingerprint}" 2>/dev/null)" != "" ]; then
+      echo "GPG key \"${fingerprint}\" is insecure, now deleting..."
+      gpg2 --batch --yes --delete-secret-key "${fingerprint}"
+      gpg2 --batch --yes --delete-key "${fingerprint}"
+      return 1
+    fi
+  else
+    #Changing the expiration does require a password, and will fail
+    if printf "key 0\nexpire\n0\n" | gpg2 --command-fd 0 --batch --edit-key "${fingerprint}" &> /dev/null ||
+       printf "key 1\nexpire\n0\n" | gpg2 --command-fd 0 --batch --edit-key "${fingerprint}" &> /dev/null; then
+      echo "GPG key \"${fingerprint}\" is insecure, now deleting..."
+      gpg2 --batch --yes --delete-secret-key "${fingerprint}"
+      gpg2 --batch --yes --delete-key "${fingerprint}"
+      return 1
+    fi
+  fi
+
+  # restart gpg agent again, so it can be normal
+  if meet_requirements "${gpg2_version}" '>=2.1'; then
+    gpgconf --kill gpg-agent || :
+  else
+    gpg-connect-agent killagent /bye || :
   fi
 }
