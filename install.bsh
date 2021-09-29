@@ -11,6 +11,9 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
+# Help make git command happy
+cd "${DOT_DIR}"
+
 # 0. Dependencies
 if ! command -v find &> /dev/null; then
   echo "Command \"find\" not found, please install find" >&2
@@ -38,11 +41,7 @@ source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
 if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
   echo "You do not have your git server ssh key setup. I will generate one for you" >&2
   "${DOT_GIT_SSH_KEY_GEN}" -t "${DOT_GIT_SSH_KEY_TYPE}" ${DOT_GIT_SSH_KEY_OTHER_ARGS[@]+"${DOT_GIT_SSH_KEY_OTHER_ARGS[@]}"} -f "${DOT_GIT_SERVER_SSH_KEY}"
-  if "${DOT_GIT_SSH_KEY_GEN}" -y -P "" -f "${DOT_GIT_SERVER_SSH_KEY}" &> /dev/null; then
-    rm "${DOT_GIT_SERVER_SSH_KEY}"
-    echo "You did not enter a passphrase, this isn't secure. Try again" >&2
-    exit 2
-  fi
+  validate_ssh_key "${DOT_GIT_SERVER_SSH_KEY}"
   echo "Please add the following key to your Git Server:" >&2
   echo
   cat "${DOT_GIT_SERVER_SSH_KEY}.pub"
