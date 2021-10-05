@@ -125,7 +125,7 @@ function add_if()
     if [ -s "${1}" ]; then
       # append to end of the file, always makes it its own line, and always
       # ends with a newline
-      sed -i '$r/dev/stdin' "${1}" <<< "${3}"
+      sed "${sed_flags_i[@]}" '$r/dev/stdin' "${1}" <<< "${3}"
     else
       # Sed doesn't work on empty files
       echo "${3}" > "${1}"
@@ -172,7 +172,7 @@ function add_after_if()
     local before_line="^$(regex_escape "${2}")"
     # Make sure the prior line exists
     add_if "${1}" "${before_line}" "${2}"
-    sed -i "s|${before_line}.*|&\n${3}|" "${1}"
+    sed "${sed_flags_i[@]}" "s|${before_line}.*|&"$'\\\n'"${3}|" "${1}"
   fi
 }
 
