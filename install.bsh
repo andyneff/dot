@@ -9,7 +9,7 @@ if [ -z "${DOT_DIR+set}" ]; then
   exit 2
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
 # Help make git command happy
 cd "${DOT_DIR}"
@@ -22,7 +22,7 @@ fi
 
 # 1. Make sure vsi_common is there
 # if ! git config submodule.external/vsi_common.url &> /dev/null; then
-pushd "${SCRIPT_DIR}" &> /dev/null
+pushd "${DOT_CORE_DIR}" &> /dev/null
   if [[ $(git submodule status external/vsi_common) =~ ^- ]]; then
     echo "Initializing vsi_common..." >&2
     git submodule update --recursive --init external/vsi_common
@@ -31,11 +31,11 @@ popd &> /dev/null
 
 
 # 2. Load settings and modules
-source "${SCRIPT_DIR}/dot_functions.bsh"
+source "${DOT_CORE_DIR}/dot_functions.bsh"
 
 load_dot_env
 
-source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
 # 3. Handle your git server ssh key
 if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
@@ -51,8 +51,8 @@ fi
 
 # 4. Clone the rest of the submodules
 if git submodule status | grep -e - &>/dev/null; then
-  source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
-  source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+  source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
+  source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
   if meet_requirements "$(git_version)" '>=2.1.0'; then
     GIT_SSH_COMMAND="ssh -i '${DOT_GIT_SERVER_SSH_KEY}' -F /dev/null" git submodule update --recursive --init
   else
@@ -71,6 +71,124 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
     echo "export \"DOT_SKIP_SYMLINK=1\" to skip the symlinks, or \"FORCE_LN=1\" to copy" >&2
   fi
 fi
+
+# 5.5 Simple download files
+local downloads=()
+local extension=''
+case "${DOT_OS}"
+  windows)
+    downloads=(${DOT_WINDOWS_DOWNLOAD_URLS[@]+"${DOT_WINDOWS_DOWNLOAD_URLS[@]}"})
+    extension='.exe'
+    ;;
+  macos)
+    downloads=(${DOT_MACOS_DOWNLOAD_URLS[@]+"${DOT_MACOS_DOWNLOAD_URLS[@]}"})
+    ;;
+  linux)
+    downloads=(${DOT_LINUX_DOWNLOAD_URLS[@]+"${DOT_LINUX_DOWNLOAD_URLS[@]}"})
+    ;;
+esac
+
+for index in "${!downloads[@]}"; do
+  if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
+    download_to_file "${downloads[index]}" ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}"
+    chmod 755 ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}"
+  fi
+done
+
+# 5.6 Simple archive downloads (Work in progress)
+# DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-windows-amd64-v1.0.1.zip)
+# DOT_MACOS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-darwin-amd64-v1.0.1.zip)
+# DOT_LINUX_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-linux-amd64-v1.0.1.zip)
+# DOT_ARCHIVE_STRIP=(1)
+# DOT_ARCHIVE_DESTINATIONS=(~/bin)
+# DOT_ARCHIVE_DOWNLOAD_FILENAMES=(lfs-folderstore)
+
+case "${DOT_OS}"
+  windows)
+    downloads=(${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]}"})
+    extension='.exe'
+    ;;
+  macos)
+    downloads=(${DOT_MACOS_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_MACOS_ARCHIVE_DOWNLOAD_URLS[@]}"})
+    ;;
+  linux)
+    downloads=(${DOT_LINUX_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_LINUX_ARCHIVE_DOWNLOAD_URLS[@]}"})
+    ;;
+esac
+
+
+for index in "${!downloads[@]}"; do
+  if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
+    temp_dir=$(mktemp -d)
+
+    temp_download_filename="${temp_dir}/$(basename "${downloads[index]}")"
+    temp_download_filename="${temp_download_filename^^\?*}"
+
+    download_to_file "${downloads[index]}" "${temp_download_filename}"
+
+
+    case "${temp_download_filename}"
+      *.zip)
+        unzip -d "${temp_dir}/temp_extract" "${temp_download_filename}"
+        ;;
+      *) # Just assume tar can take it
+        tar xvf "${temp_download_filename}" "${temp_dir}/temp_extract"
+        ;;
+    esac
+
+    strip_copy "${temp_dir}/temp_extract" "${DOT_ARCHIVE_DESTINATIONS[index]}" "${DOT_ARCHIVE_STRIP[index]}"
+
+    rm -rf "${temp_dir}"
+  fi
+done
+
+# # 5.6 Advanced downloads (Work in progress)
+# DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-windows-amd64-v1.0.1.zip)
+# DOT_MACOS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-darwin-amd64-v1.0.1.zip)
+# DOT_LINUX_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-linux-amd64-v1.0.1.zip)
+# DOT_ARCHIVE_FOLDERS=('lfs-folderstore-*')
+# DOT_ARCHIVE_DESTINATIONS=(~/bin)
+# DOT_ARCHIVE_DOWNLOAD_FILENAMES=(lfs-folderstore)
+
+# case "${DOT_OS}"
+#   windows)
+#     downloads=(${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]}"})
+#     extension='.exe'
+#     ;;
+#   macos)
+#     downloads=(${DOT_MACOS_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_MACOS_ARCHIVE_DOWNLOAD_URLS[@]}"})
+#     ;;
+#   linux)
+#     downloads=(${DOT_LINUX_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_LINUX_ARCHIVE_DOWNLOAD_URLS[@]}"})
+#     ;;
+# esac
+
+# temp_dir=$(mktemp -d)
+
+# for index in "${!downloads[@]}"; do
+#   if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
+
+#     temp_download_filename="${temp_dir}/$(basename "${downloads[index]}")"
+
+#     download_to_file "${downloads[index]}" "${temp_download_filename}"
+
+#     case "${temp_download_filename}"
+#       *.zip)
+#         unzip -d "${temp_dir}/temp_extract" "${temp_download_filename}"
+#         mv "${temp_download_filename}"
+#         unzip -d "$dest" "$zip" && f=("$dest"/*) && mv "$dest"/*/* "$dest" && rmdir "${f[@]}"
+
+#       *) # Assume tar
+#         tar -x
+#         ;;
+#     esac
+
+#     #  ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}"
+
+
+#     # chmod 755 ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}"
+#   fi
+# done
 
 # 6. Install files!
 for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do

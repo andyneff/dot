@@ -2,15 +2,15 @@
 
 #*# dot_functions
 
-if [ -z "${SCRIPT_DIR+set}" ]; then
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+if [ -z "${DOT_CORE_DIR+set}" ]; then
+  DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 fi
 
-source "${SCRIPT_DIR}/external/vsi_common/linux/string_tools.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/compat.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/aliases.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/string_tools.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/compat.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/aliases.bsh"
 
 #**
 # =============
@@ -93,7 +93,15 @@ function backup_and_replace()
 function load_dot_env()
 {
   set -a
-  for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/* "${SCRIPT_DIR}"; do
+
+  DOT_OS=linux
+  if [ "${OS-}" = "Windows_NT" ]; then
+    DOT_OS=windows
+  elif [[ ${OSTYPE-} = darwin* ]]; then
+    DOT_OS=macos
+  fi
+
+  for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/* "${DOT_CORE_DIR}"; do
     if [ -r "${files_dir}/dot.env" ]; then
       source "${files_dir}/dot.env"
     fi
@@ -155,8 +163,8 @@ function add_if()
 #    # git/config
 #    add_after_if ~/.gitconfig "[include]" "  path = ~/.default.gitconfig"
 #
-#    source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
-#    source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+#    source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
+#    source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
 #    if meet_requirements "$(git_version)" '>=2.11.4'; then
 #      add_after_if ~/.gitconfig "[include]" "  path = ~/.2.11.4.gitconfig"
 #    fi

@@ -7,12 +7,12 @@ if [ -z "${DOT_DIR+set}" ]; then
   exit 2
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-source "${SCRIPT_DIR}/dot_functions.bsh"
+DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+source "${DOT_CORE_DIR}/dot_functions.bsh"
 
 load_dot_env
 
-source "${SCRIPT_DIR}/external/vsi_common/linux/dir_tools.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/dir_tools.bsh"
 
 for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
   while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
