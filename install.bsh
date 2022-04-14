@@ -36,6 +36,7 @@ source "${DOT_CORE_DIR}/dot_functions.bsh"
 load_dot_env
 
 source "${DOT_CORE_DIR}/external/vsi_common/linux/dir_tools.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/web_tools.bsh"
 
 # 3. Handle your git server ssh key
 if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
@@ -72,10 +73,16 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   fi
 fi
 
-# 5.5 Simple download files
-local downloads=()
-local extension=''
-case "${DOT_OS}"
+# 5.5 Simple download files (Todo: Document)
+# Example:
+# DOT_WINDOWS_DOWNLOAD_URLS=(https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe)
+# DOT_LINUX_DOWNLOAD_URLS=(https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64)
+# DOT_MACOS_DOWNLOAD_URLS=(https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64)
+# DOT_DOWNLOAD_FILENAMES=(jq)
+
+downloads=()
+extension=''
+case "${DOT_OS}" in
   windows)
     downloads=(${DOT_WINDOWS_DOWNLOAD_URLS[@]+"${DOT_WINDOWS_DOWNLOAD_URLS[@]}"})
     extension='.exe'
@@ -96,6 +103,7 @@ for index in "${!downloads[@]}"; do
 done
 
 # 5.6 Simple archive downloads (Work in progress)
+# example
 # DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-windows-amd64-v1.0.1.zip)
 # DOT_MACOS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-darwin-amd64-v1.0.1.zip)
 # DOT_LINUX_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-linux-amd64-v1.0.1.zip)
@@ -103,7 +111,7 @@ done
 # DOT_ARCHIVE_DESTINATIONS=(~/bin)
 # DOT_ARCHIVE_DOWNLOAD_FILENAMES=(lfs-folderstore)
 
-case "${DOT_OS}"
+case "${DOT_OS}" in
   windows)
     downloads=(${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]+"${DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS[@]}"})
     extension='.exe'
@@ -118,7 +126,7 @@ esac
 
 
 for index in "${!downloads[@]}"; do
-  if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
+  if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_ARCHIVE_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
     temp_dir=$(mktemp -d)
 
     temp_download_filename="${temp_dir}/$(basename "${downloads[index]}")"
@@ -127,7 +135,7 @@ for index in "${!downloads[@]}"; do
     download_to_file "${downloads[index]}" "${temp_download_filename}"
 
 
-    case "${temp_download_filename}"
+    case "${temp_download_filename}" in
       *.zip)
         unzip -d "${temp_dir}/temp_extract" "${temp_download_filename}"
         ;;
@@ -136,7 +144,10 @@ for index in "${!downloads[@]}"; do
         ;;
     esac
 
-    strip_copy "${temp_dir}/temp_extract" "${DOT_ARCHIVE_DESTINATIONS[index]}" "${DOT_ARCHIVE_STRIP[index]}"
+    # temp_extract shouldn't be counted, so add one to depth)
+    strip_copy "${temp_dir}/temp_extract" "${DOT_ARCHIVE_DESTINATIONS[index]}" $(("${DOT_ARCHIVE_STRIP[index]}"+1))
+
+    chmod 755 ~/bin/"${DOT_ARCHIVE_DOWNLOAD_FILENAMES[index]}${extension}"
 
     rm -rf "${temp_dir}"
   fi
