@@ -130,7 +130,8 @@ for index in "${!downloads[@]}"; do
     temp_dir=$(mktemp -d)
 
     temp_download_filename="${temp_dir}/$(basename "${downloads[index]}")"
-    temp_download_filename="${temp_download_filename^^\?*}"
+    temp_download_filename="${temp_download_filename%%\?*}"
+    temp_download_filename="${temp_download_filename%%#*}"
 
     download_to_file "${downloads[index]}" "${temp_download_filename}"
 
@@ -145,7 +146,7 @@ for index in "${!downloads[@]}"; do
     esac
 
     # temp_extract shouldn't be counted, so add one to depth)
-    strip_copy "${temp_dir}/temp_extract" "${DOT_ARCHIVE_DESTINATIONS[index]}" $(("${DOT_ARCHIVE_STRIP[index]}"+1))
+    strip_copy "${temp_dir}/temp_extract" "${DOT_ARCHIVE_DESTINATIONS[index]}" $((${DOT_ARCHIVE_STRIP[index]}+1))
 
     chmod 755 ~/bin/"${DOT_ARCHIVE_DOWNLOAD_FILENAMES[index]}${extension}"
 
