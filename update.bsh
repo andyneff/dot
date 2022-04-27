@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+DOT_DIR="${DOT_CORE_DIR}/../.."
+
+source "${DOT_CORE_DIR}/new_repo.bsh"
+
+if [ "${DEFAULT_INSTALL_SCRIPT}" != "$(cat "${DOT_DIR}/install.bsh")" ]; then
+  echo "${DEFAULT_INSTALL_SCRIPT}" > "${DOT_DIR}/install.bsh"
+  echo "install.bsh has been updated" >&2
+else
+  echo "install.bsh is already up-to-date" >&2
+fi
+
+if [ "${DEFAULT_UNINSTALL_SCRIPT}" != "$(cat "${DOT_DIR}/uninstall.bsh")" ]; then
+  echo "${DEFAULT_UNINSTALL_SCRIPT}" > "${DOT_DIR}/uninstall.bsh"
+  echo "uninstall.bsh has been updated" >&2
+else
+  echo "uninstall.bsh is already up-to-date" >&2
+fi

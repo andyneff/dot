@@ -1,46 +1,5 @@
 #!/usr/bin/env bash
 
-if [ -z "${DOT_DIR+set}" ]; then
-  echo "ERROR: DOT_DIR is not set. It looks like you tried to call this script directly." >&2
-  echo "The intended use of this script is to be called by your dot files install.bsh" >&2
-  echo "See: new_repos.bsh" >&2
-  exit 2
-fi
-
-DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-source "${DOT_CORE_DIR}/dot_functions.bsh"
-
-load_dot_env
-
-source "${DOT_CORE_DIR}/external/vsi_common/linux/dir_tools.bsh"
-
-for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
-  while IFS= read -r -d '' dotfile || [ -n "${dotfile}" ]; do
-    path_part=$(relative_path "${dotfile}" "${files_dir}/files")
-
-    target=~/"${path_part}"
-    copy_target="${DOT_BACKUP_DIR}/${path_part}"
-
-    # create new symbolic links
-    if [ -L "${target}" ]; then
-      rm "${target}"
-
-      if [ -e "${copy_target}" ]; then
-        mv "${copy_target}" "${target}"
-      fi
-    elif [ -e "${target}" ]; then
-      echo "${target} is not a symlink, leaving it alone" >&2
-    fi
-  done < <(find "${files_dir}/files" -type f -print0)
-
-  if [ -r "${files_dir}/custom.bsh" ]; then
-    unset unsetup
-    source "${files_dir}/custom.bsh"
-    # Make sure we don't accidentally run a command called unsetup
-    if [ "$(type -t unsetup)" = "function" ]; then
-      unsetup
-    fi
-  fi
-done
-
-echo "Uninstall complete" >&2
+dot_core_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+echo "Warning: you are using the older API. Plus update your install.bsh script using: ${dot_core_dir}/update.bsh" >&2
+"${dot_core_dir}/uninstall_common.bsh" ${@+"${@}"}

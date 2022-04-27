@@ -19,16 +19,7 @@ function write_new_file()
   fi
 }
 
-function setup_new_dot_repo()
-{
-  # 1. git repo
-  if [ ! -d .git ]; then
-    git init .
-  fi
-
-  # 2. install.bsh
-  cat - << 'EOF' | write_new_file install.bsh
-#!/usr/bin/env bash
+DEFAULT_INSTALL_SCRIPT='#!/usr/bin/env bash
 
 set -eu
 
@@ -43,10 +34,22 @@ pushd "${DOT_DIR}" &> /dev/null
 popd &> /dev/null
 
 # 2. Call the universal install script
-"${DOT_DIR}/external/dot_core/install.bsh" ${@+"${@}"}
-EOF
-  chmod 755 install.bsh
+"${DOT_DIR}/external/dot_core/install_common.bsh" ${@+"${@}"}'
 
+DEFAULT_UNINSTALL_SCRIPT='#!/usr/bin/env bash
+export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+"${DOT_DIR}/external/dot_core/uninstall_common.bsh" ${@+"${@}"}'
+
+function setup_new_dot_repo()
+{
+  # 1. git repo
+  if [ ! -d .git ]; then
+    git init .
+  fi
+
+  # 2. install.bsh
+  echo "${DEFAULT_INSTALL_SCRIPT}" | write_new_file install.bsh
+  chmod 755 install.bsh
 
   # 3. dot.env
   cat - << 'EOF' | write_new_file dot.env
@@ -91,17 +94,15 @@ EOF
 bak
 EOF
 
-  cat - << 'EOF' | write_new_file uninstall.bsh
-#!/usr/bin/env bash
-export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-"${DOT_DIR}/external/dot_core/uninstall.bsh" ${@+"${@}"}
-EOF
+  # 7. uninstall.bsh
+
+  echo "${DEFAULT_UNINSTALL_SCRIPT}" | write_new_file uninstall.bsh
   chmod 755 uninstall.bsh
 
-  # 7. files
+  # 8. files
   mkdir -p files
 
-  # 8. submodule
+  # 9. submodule
   if ! git submodule status external/dot_core &> /dev/null; then
     git submodule add https://github.com/andyneff/dot.git external/dot_core
   fi
@@ -116,7 +117,7 @@ cp ~/.bashrc files/.bashrc
 mkdir files/.ssh
 cp ~/.ssh/config files/.ssh/config
 
-Don't forget to add and commit the files!
+Don't forget to add and commit your files!
 EOF
 }
 
