@@ -150,13 +150,13 @@ function add_if()
 #             * ``$2`` - Prior line to add ``$3`` after. Must not contain newlines.
 #             * ``$3`` - Target string to add. Must not contain newlines.
 #
-# .. rubric:: example
+# .. rubric:: Example
 #
-#    In this example, we want to:
+# In this example, we want to:
 #
-#    * Always add `path = ~/.default.gitconfig` after `[include]`
-#    * Add `path = ~/.2.11.4.gitconfig` after `[include]`, but only if git is version 2.11.4 or newer
-#    * Add `path = ~/.windows.gitconfig` after `[include]`, but only if running on Windows
+# * Always add ``path = ~/.default.gitconfig`` after ``[include]``
+# * Add ``path = ~/.2.11.4.gitconfig`` after ``[include]``, but only if git is version 2.11.4 or newer
+# * Add ``path = ~/.windows.gitconfig`` after ``[include]``, but only if running on Windows
 #
 # .. code:: bash
 #
@@ -172,7 +172,7 @@ function add_if()
 #    if [ "${OS-}" = "Windows_NT" ]; then
 #      add_after_if ~/.gitconfig "[include]" "  path = ~/.windows.gitconfig"
 #    fi
-# **
+#**
 function add_after_if()
 {
   # If line already exists, then do nothing
@@ -209,12 +209,12 @@ function validate_ssh_key()
 }
 
 #**
-# .. function: gpg_key_batch
+# .. function:: gpg_key_batch
 #
 # Some good (I hope?) defaults for generating GPG keys. If you want to override this, just define your own :func:`gpg_key_batch`. See https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html for more information
 #
-# :Parameters: * ``$1`` - Real Name/Comment
-#              * ``$2`` - Email address
+# :Arguments: * ``$1`` - Real Name/Comment
+#             * ``$2`` - Email address
 #**
 function gpg_key_batch()
 {
@@ -241,7 +241,7 @@ EOF
 }
 
 #**
-# .. function: gen_gpg_key
+# .. function:: gen_gpg_key
 #
 # Generate a gpg key based on :func:`gpg_key_batch`. While the passphase is initially unset, it will have you change it.
 #
@@ -250,7 +250,7 @@ EOF
 # :Arguments: * ``$1`` - Real name (also used for comment)
 #             * ``$2`` - Email address
 #
-# .. note:
+# .. note::
 #
 #    Only tested against GPG 2.0 or 2.1, that was hard enough
 #**

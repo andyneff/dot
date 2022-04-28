@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+source "${VSI_COMMON_DIR}/linux/just_files/just_env" "$(dirname "${BASH_SOURCE[0]}")"/'dot_docs.env'
+source "${VSI_COMMON_DIR}/linux/just_files/just_sphinx_functions.bsh"
+source "${VSI_COMMON_DIR}/linux/just_files/just_docker_functions.bsh"
+
+cd "${DOT_DOCS_CWD}"
+
+function caseify()
+{
+  local just_arg="${1}"
+  shift 1
+  case ${just_arg} in
+    ci-sphinx-build) # Build sphinx image
+      # export DOCKER_BUILDKIT=1
+      # export COMPOSE_DOCKER_CLI_BUILD=1
+
+      # docker buildx create --name ga_builder --use
+
+      # DOCKER_COMPOSE_EXTRA_ARGS=(-f "${DOT_DOCS_CWD}/docs/sphinx-cache.yml")
+      justify sphinx build
+
+      # docker buildx rm ga_builder
+      ;;
+    ci-compile-docs) # Compile docs
+      SPHINXOPTS='-W  --keep-going' justify sphinx compile -n --all
+      ;;
+    ci-deploy-docs) # Push docs. $1 - Username, $2 - https token
+      # move the compile docs out of the way
+
+      temp_dir="$(mktemp -d)"
+      git clone "${DOT_DOCS_CWD}" "${temp_dir}"
+
+      cd "${temp_dir}"
+
+      git checkout gh-pages || git checkout --orphan gh-pages
+      git reset --hard # This is important if gh-pages was just created
+      git rm $(git ls-files) || : # noquotes
+      cp -a "${DOT_DOCS_CWD}/docs/_build/html"/* ./
+      touch .nojekyll
+
+      git add --all
+      if [ "$(git status --porcelain -uno | wc -l)" != "0" ]; then
+        git config --global user.email "github-actions@github.com" > /dev/null 2>&1
+        git config --global user.name "Github Actions" > /dev/null 2>&1
+        git commit -m "Autobuild documentation [ci skip]"
+        git remote set-url origin "https://${1}:${2}@github.com/${GITHUB_REPOSITORY}.git"
+        git push origin gh-pages
+      fi
+
+      extra_args=2
+      ;;
+    *)
+      defaultify "${just_arg}" ${@+"${@}"}
+      ;;
+  esac
+}
