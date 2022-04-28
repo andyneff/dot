@@ -1,0 +1,42 @@
+=============
+Dot Variables
+=============
+
+.. default-domain:: bash
+
+.. file:: dot.env
+
+A set of variables you can easily customize in your dot.env files in your "dot files repo"
+
+.. envvar:: DOT_BACKUP_DIR
+
+The location where your original config files are backed up. These files are used when uninstalling. Defaults to `bak` subdirectory in your "dot files repo"
+
+.. envvar:: DOT_DIR_PERMISSIONS
+
+Default permissions for your base dot files repo, to protect it from prying eyes. Default is `0700`
+
+------------
+SSH auto gen
+------------
+
+.. envvar:: DOT_GIT_SSH_KEY_GEN
+
+Name of ssh-keygen executable, in case you need to customize it. Set to empty string to disable ssh keys auto generation on install. Default: `ssh-keygen`
+
+.. envvar:: DOT_GIT_SSH_KEY_TYPE
+
+The type of ssh key that is generate. Default: `ed25519`
+
+.. envvar:: DOT_GIT_SERVER_SSH_KEY
+
+The location to store the ssh key. Default: ~/.ssh/id_ed25519 (if :envvar:`DOT_GIT_SSH_KEY_TYPE` is `ed25519`)
+
+.. var:: DOT_GIT_SSH_KEY_OTHER_ARGS
+
+An array of additional arguments to pass to `ssh-keygen`. The default is `(-b 4096)`, which is a good default for RSA that even works on ed25519 because ed25519 ignores the -b flag
+
+.. envvar:: DOT_OS
+
+This is an OS category identifier. Possible values are ``windows``, ``macos`` and ``linux`` for all else.
+

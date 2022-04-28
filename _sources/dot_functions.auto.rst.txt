@@ -1,0 +1,109 @@
+=============
+Dot Functions
+=============
+
+.. default-domain:: bash
+
+.. file:: dot_functions.bsh
+
+A set of support functions to help make writing dot custom scripts easier, with out introducing additional dependencies.
+
+Most of these function are to assist in writing custom script without having to add extra work for you or learn a lot of bash.
+
+.. function:: symlink
+
+Cross OS function for creating a symlink
+
+On windows, either admin privileges are needed, or (less preferred) windows has to be put in a "Developer mode" (by an admin, of course)
+
+:Arguments: * ``$1`` - Source filename
+            * ``$2`` - Filename of the symlink to be created
+
+.. function:: backup_and_replace
+
+**Internal function:** The main function that replaces existing files in your home directory with a symlink in your dot files repo.
+
+If a file already exists and is not already a symlink, then it is copied to :envvar:`DOT_BACKUP_DIR`, mimicking the same directory structure as in your home directory.
+
+If the file has already been backed up once, and needs to be backed up again, then an extra `.#` extension is added (counting up from 0) is added. This could be because an external influences replaced the symlink with a file, or on Windows when symlinks could not be used.
+
+.. function:: load_dot_env
+
+**Internal function:** Load and exports the `dot.env` files
+
+.. function:: add_if
+
+When trying to write a custom script to modify configuration files, you will run into situations where you will want to add a block of code if a string doesn't already exist in the file. There are several corner cases to cover here, does the files exist, does it already end in a newline, etc... This function will add a string if the condition is not met, guaranteeing it is not combine with the last line of the file and make sure the files ends in a newline if the file is modified.
+
+:Arguments: * ``$1`` - Filename of the file to be modified
+            * ``$2`` - Regex condition that must not match any line in the file for the line to be added. Set to empty string to always add the line. Must not contain newlines.
+            * ``$3`` - Target string to add. May contain newlines.
+
+.. rubric:: Example
+
+.. code:: bash
+
+   add_if ~/.bashrc '\.personal\.bashrc' \
+   'if [ -r ~/.personal.bashrc ]; then
+     . ~/.personal.bashrc
+   fi'
+
+.. function:: add_after_if
+
+When trying to write a custom script to modify configuration files, you will run into situations where you need to add a configuration line, after another line (such as a header). There are several corner cases to cover here, what if the "prior line" doesn't already exist and needs to be added? What if the target line has already been added, it shouldn't be added twice. This function handles all of that for you, so that you can just focusing on making sure you added the target line after the prior line
+
+:Arguments: * ``$1`` - Filename of the file to be modified
+            * ``$2`` - Prior line to add ``$3`` after. Must not contain newlines.
+            * ``$3`` - Target string to add. Must not contain newlines.
+
+.. rubric:: Example
+
+In this example, we want to:
+
+* Always add ``path = ~/.default.gitconfig`` after ``[include]``
+* Add ``path = ~/.2.11.4.gitconfig`` after ``[include]``, but only if git is version 2.11.4 or newer
+* Add ``path = ~/.windows.gitconfig`` after ``[include]``, but only if running on Windows
+
+.. code:: bash
+
+   # git/config
+   add_after_if ~/.gitconfig "[include]" "  path = ~/.default.gitconfig"
+
+   source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
+   source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
+   if meet_requirements "$(git_version)" '>=2.11.4'; then
+     add_after_if ~/.gitconfig "[include]" "  path = ~/.2.11.4.gitconfig"
+   fi
+
+   if [ "${OS-}" = "Windows_NT" ]; then
+     add_after_if ~/.gitconfig "[include]" "  path = ~/.windows.gitconfig"
+   fi
+
+.. function:: validate_ssh_key
+
+Check to see if an SSH key had a passphrase on it. If it does not, delete the file so that it cannot be used.
+
+SSH keys should not be passphraseless, that's what ssh agent is for. This function is used to enforce that.
+
+:Arguments: * ``$1`` - Path of ssh key
+
+.. function:: gpg_key_batch
+
+Some good (I hope?) defaults for generating GPG keys. If you want to override this, just define your own :func:`gpg_key_batch`. See https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html for more information
+
+:Arguments: * ``$1`` - Real Name/Comment
+            * ``$2`` - Email address
+
+.. function:: gen_gpg_key
+
+Generate a gpg key based on :func:`gpg_key_batch`. While the passphase is initially unset, it will have you change it.
+
+(GPG 2.1 or newer) It will check to see if an GPG key had a passphrase on it. If it does not, the key is **automatically** deleted. GPG keys should not be passphraseless, that's what gpg agent is for.
+
+:Arguments: * ``$1`` - Real name (also used for comment)
+            * ``$2`` - Email address
+
+.. note::
+
+   Only tested against GPG 2.0 or 2.1, that was hard enough
+
