@@ -1,0 +1,20 @@
+name: Build Docs
+
+on:
+  push:
+
+jobs:
+  build-docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build sphinx image
+        run: |
+          cd docs
+          source setup.env
+          just -n sphinx build
+          just sphinx build

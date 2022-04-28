@@ -2,3 +2,73 @@
 
 source "${VSI_COMMON_DIR}/linux/just_files/just_env" "$(dirname "${BASH_SOURCE[0]}")"/'dot_docs.env'
 source "${VSI_COMMON_DIR}/linux/just_files/just_sphinx_functions.bsh"
+source "${VSI_COMMON_DIR}/linux/just_files/just_docker_functions.bsh"
+
+function caseify()
+{
+  local just_arg="${1}"
+  shift 1
+  case ${just_arg} in
+    ci-compile-docs)
+    #   compile_docs:
+    # <<: *container_config
+
+    # steps:
+    #   - checkout
+    #   - submodule_checkout
+    #   - setup_remote_docker
+    #   - dependencies_and_smuggle
+
+    #   - run:
+    #       name: Generate docs
+    #       command: |
+        tar c . | docker run -i --rm -v /root/repo:/src -w /src alpine:3.11 tar x
+        SPHINXOPTS='-W  --keep-going' just sphinx build compile -n --all
+        docker run --rm -v /root/repo:/src -w /src alpine:3.11 tar c ./docs/_build/html | tar x
+
+      # - persist_to_workspace:
+      #     root: docs/_build
+      #     paths: html
+
+      ;;
+    ci-deploy-docs) # Compile and push docs
+      # # Load the functions new_just uses
+      # source ./linux/just_files/new_just
+
+      git checkout gh-pages || git checkout --orphan gh-pages
+      git reset --hard # This is important if gh-pages was just created
+      git rm $(git ls-files) # noquotes
+      mv /docs/html/* ./
+      touch .nojekyll
+
+      # # restore new_just file
+      # git show "origin/${GITHUB_REF_NAME}:linux/just_files/new_just" > ./new_just
+      # # patch the missing functions with copies from the sourced version above
+      # function_names=($(sed -nE 's|^ *function (.*)\(\)\{ :;}|\1|p' ./new_just))
+
+      # for function_name in "${function_names[@]}"; do
+      #   declare -pf "${function_name}" | sed -i '/function '"${function_name}"'(){ :;}/{r /dev/stdin
+      #                                                                                   d;}' ./new_just
+      # done
+
+      # # Create a dummy circleci config for gh-pages, to make it happy
+      # mkdir .circleci
+      # printf 'version: 2.1\norbs:\n  welcome: circleci/welcome-orb@0.4.1\nworkflows:\n' > .circleci/config.yml
+      # printf '  nothing:\n    jobs:\n      - welcome/run:\n          filters:\n' >> .circleci/config.yml
+      # printf '            branches:\n              ignore:\n                - /.*/\n' >> .circleci/config.yml
+
+      git add --all
+      if [ "$(git status --porcelain -uno | wc -l)" != "0" ]; then
+        git config --global user.email "github-actions@github.com" > /dev/null 2>&1
+        git config --global user.name "Github Actions" > /dev/null 2>&1
+        git commit -m "Autobuild documentation [ci skip]"
+        git remote set-url origin "https://${GH_NAME}:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git push origin gh-pages
+      fi
+
+      ;;
+    *)
+      defaultify "${just_arg}" ${@+"${@}"}
+      ;;
+  esac
+}
