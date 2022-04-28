@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+source "${VSI_COMMON_DIR}/linux/just_files/just_env" "$(dirname "${BASH_SOURCE[0]}")"/'dot_docs.env'
+source "${VSI_COMMON_DIR}/linux/just_files/just_sphinx_functions.bsh"
