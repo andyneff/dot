@@ -30,10 +30,12 @@ function caseify()
 
       temp_dir="$(mktemp -d)"
       git clone "${DOT_DOCS_CWD}" "${temp_dir}"
+      upstream="$(git remote get-url origin)"
 
       cd "${temp_dir}"
 
-      git fetch origin gh-pages:gh-pages || :
+      git remote add upstream "${upstream}"
+      git fetch upstream gh-pages:gh-pages || :
       git checkout gh-pages || git checkout --orphan gh-pages
       git reset --hard # This is important if gh-pages was just created
       git rm $(git ls-files) || : # noquotes
