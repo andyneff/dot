@@ -47,6 +47,8 @@ function caseify()
         git remote set-url origin "https://${1}:${2}@github.com/${GITHUB_REPOSITORY}.git"
         git push origin gh-pages
       fi
+
+      extra_args=2
       ;;
     *)
       defaultify "${just_arg}" ${@+"${@}"}
