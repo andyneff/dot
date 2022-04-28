@@ -4,22 +4,35 @@ source "${VSI_COMMON_DIR}/linux/just_files/just_env" "$(dirname "${BASH_SOURCE[0
 source "${VSI_COMMON_DIR}/linux/just_files/just_sphinx_functions.bsh"
 source "${VSI_COMMON_DIR}/linux/just_files/just_docker_functions.bsh"
 
+cd "${DOT_DOCS_CWD}"
+
 function caseify()
 {
   local just_arg="${1}"
   shift 1
   case ${just_arg} in
+    ci-sphinx-build) # Build sphinx image
+      # export DOCKER_BUILDKIT=1
+      # export COMPOSE_DOCKER_CLI_BUILD=1
+
+      # docker buildx create --name ga_builder --use
+
+      # DOCKER_COMPOSE_EXTRA_ARGS=(-f "${DOT_DOCS_CWD}/docs/sphinx-cache.yml")
+      justify sphinx build
+
+      # docker buildx rm ga_builder
+      ;;
     ci-compile-docs) # Compile docs
-      SPHINXOPTS='-W  --keep-going' justify sphinx build compile -n --all
+      SPHINXOPTS='-W  --keep-going' justify sphinx compile -n --all
       ;;
     ci-deploy-docs) # Push docs. $1 - Username, $2 - https token
       # move the compile docs out of the way
-      mv docs/_build/html ~/html
+      mv docs/_build/html ~/
 
       git checkout gh-pages || git checkout --orphan gh-pages
       git reset --hard # This is important if gh-pages was just created
       git rm $(git ls-files) # noquotes
-      mv /docs/html/* ./
+      mv ~/html/* ./
       touch .nojekyll
 
       git add --all
