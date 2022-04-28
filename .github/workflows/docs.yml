@@ -45,6 +45,7 @@ jobs:
     steps:
       - name: Deploy docs
         run: |
+          ls -la
           cd docs
           source setup.env
           just ci-deploy-docs "${GITHUB_ACTOR}" "${{ secrets.GITHUB_TOKEN }}"
