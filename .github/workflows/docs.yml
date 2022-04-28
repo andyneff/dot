@@ -16,5 +16,9 @@ jobs:
         run: |
           cd docs
           source setup.env
-          just -n sphinx build
-          just sphinx build
+          just ci-compile-docs
+      - name: Deploy docs
+        run: |
+          cd docs
+          source setup.env
+          just ci-deploy-docs "${GITHUB_ACTOR}" "${{ secrets.GITHUB_TOKEN }}"
