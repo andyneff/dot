@@ -95,6 +95,8 @@ case "${DOT_OS}" in
     ;;
 esac
 
+mkdir -p ~/bin
+
 for index in "${!downloads[@]}"; do
   if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
     download_to_file "${downloads[index]}" ~/bin/"${DOT_DOWNLOAD_FILENAMES[index]}${extension}"
