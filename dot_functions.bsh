@@ -258,6 +258,9 @@ function gen_gpg_key()
 {
   source "${VSI_COMMON_DIR}/linux/colors.bsh"
 
+  mkdir -p ~/.gnupg
+  chmod 700 ~/.gnupg
+
   local gpg2_version="$(gpg_version)"
 
   # works on rhel/centos/fedora, because it uses this
