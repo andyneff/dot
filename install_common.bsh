@@ -126,8 +126,8 @@ case "${DOT_OS}" in
     ;;
 esac
 
-
-for index in "${!downloads[@]}"; do
+function simple_download()
+{
   if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${DOT_ARCHIVE_DOWNLOAD_FILENAMES[index]}${extension}" ]; then
     temp_dir=$(mktemp -d)
 
@@ -140,7 +140,13 @@ for index in "${!downloads[@]}"; do
 
     case "${temp_download_filename}" in
       *.zip)
-        unzip -d "${temp_dir}/temp_extract" "${temp_download_filename}"
+        if command -v unzip &> /dev/null; then
+          unzip -d "${temp_dir}/temp_extract" "${temp_download_filename}"
+        else
+          echo "Unzip isn't installed, skipping ${temp_download_filename}"
+          rm -rf "${temp_dir}"
+          return 0
+        fi
         ;;
       *) # Just assume tar can take it
         tar xvf "${temp_download_filename}" "${temp_dir}/temp_extract"
@@ -154,6 +160,10 @@ for index in "${!downloads[@]}"; do
 
     rm -rf "${temp_dir}"
   fi
+}
+
+for index in "${!downloads[@]}"; do
+  simple_download
 done
 
 # # 5.6 Advanced downloads (Work in progress)
