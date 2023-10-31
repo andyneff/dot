@@ -149,7 +149,8 @@ function simple_download()
         fi
         ;;
       *) # Just assume tar can take it
-        tar xvf "${temp_download_filename}" "${temp_dir}/temp_extract"
+        mkdir "${temp_dir}/temp_extract"
+        tar xvf "${temp_download_filename}" -C "${temp_dir}/temp_extract"
         ;;
     esac
 
