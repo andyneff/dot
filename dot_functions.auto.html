@@ -43,6 +43,10 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="what_is.html">What is dot_core?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Simple configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dot_env.auto.html">Dot Variables</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Dot Functions</a></li>
 </ul>
@@ -166,6 +170,28 @@ add_after_if<span class="w"> </span>~/.gitconfig<span class="w"> </span><span cl
 <span class="w">  </span>add_after_if<span class="w"> </span>~/.gitconfig<span class="w"> </span><span class="s2">&quot;[include]&quot;</span><span class="w"> </span><span class="s2">&quot;  path = ~/.windows.gitconfig&quot;</span>
 <span class="k">fi</span>
 </pre></div>
+</div>
+<dl class="bash function">
+<dt class="sig sig-object bash" id="function-dot_functions.bsh skip_if_env">
+<span class="sig-name descname"><span class="pre">skip_if_env</span></span><a class="headerlink" href="#function-dot_functions.bsh skip_if_env" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<p>Check if an environment variable is set, and return 1 if it does not exist</p>
+<p>This is meant to be used in conjunction with <cite>install.bsh –config</cite>, that will generate a <cite>local_install</cite> file in your dot files directory</p>
+<p class="rubric">Example</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env bash</span>
+
+<span class="nb">set</span><span class="w"> </span>-eu
+<span class="nb">source</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">DOT_CORE_DIR</span><span class="si">}</span><span class="s2">/dot_functions.bsh&quot;</span>
+
+skip_if_env<span class="w"> </span>SKIP_MYPLUGIN<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="m">0</span>
+
+<span class="c1"># Code when not skipped goes here</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="configuration.html#simple-configuration"><span class="std std-ref">Simple configuration</span></a></p>
 </div>
 <dl class="bash function">
 <dt class="sig sig-object bash" id="function-dot_functions.bsh validate_ssh_key">

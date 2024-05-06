@@ -79,6 +79,28 @@ In this example, we want to:
      add_after_if ~/.gitconfig "[include]" "  path = ~/.windows.gitconfig"
    fi
 
+.. function:: skip_if_env
+
+Check if an environment variable is set, and return 1 if it does not exist
+
+This is meant to be used in conjunction with `install.bsh --config`, that will generate a `local_install` file in your dot files directory
+
+.. rubric:: Example
+
+.. code:: bash
+
+   #!/usr/bin/env bash
+
+   set -eu
+   source "${DOT_CORE_DIR}/dot_functions.bsh"
+
+   skip_if_env SKIP_MYPLUGIN || return 0
+
+   # Code when not skipped goes here
+
+.. seealso::
+   :ref:`Simple configuration`
+
 .. function:: validate_ssh_key
 
 Check to see if an SSH key had a passphrase on it. If it does not, delete the file so that it cannot be used.
