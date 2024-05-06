@@ -14,13 +14,13 @@ DOT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 # Help make git command happy
 cd "${DOT_DIR}"
 
-# 0. Dependencies
+# 1. Dependencies
 if ! command -v find &> /dev/null; then
   echo "Command \"find\" not found, please install find" >&2
   exit 2
 fi
 
-# 1. Make sure vsi_common is there
+# 2. Make sure vsi_common is there
 # if ! git config submodule.external/vsi_common.url &> /dev/null; then
 pushd "${DOT_CORE_DIR}" &> /dev/null
   if [[ $(git submodule status external/vsi_common) =~ ^- ]]; then
@@ -30,15 +30,57 @@ pushd "${DOT_CORE_DIR}" &> /dev/null
 popd &> /dev/null
 
 
-# 2. Load settings and modules
+# 3. Load settings and modules
 source "${DOT_CORE_DIR}/dot_functions.bsh"
 
 load_dot_env
 
+source "${DOT_CORE_DIR}/external/vsi_common/linux/ask_question"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/command_tools.bsh"
 source "${DOT_CORE_DIR}/external/vsi_common/linux/dir_tools.bsh"
 source "${DOT_CORE_DIR}/external/vsi_common/linux/web_tools.bsh"
 
-# 3. Handle your git server ssh key
+# 4 Optional argument
+configure_install=0
+args_parsed=0
+parse_args args_parsed --config configure_install \
+                       -- ${@+"${@}"}
+shift "${args_parsed}"
+
+# 5. Optional config step
+
+if [ "${configure_install}" != "0" ]; then
+  if [ -f "${DOT_DIR}/config.txt" ]; then
+    if [ -f "${DOT_DIR}/local_install" ]; then
+      rm "${DOT_DIR}/local_install"
+    fi
+
+    while read -u 3 -r line || [ -n "${line}" ]; do
+      if [ -z "${line}" ] || [[ "${line:0:1}" =~ ^\ *# ]]; then
+        continue
+      fi
+      var=${line%% *}
+      line=${line#* }
+      ask_question "${line}" ans n
+      if [ "${ans}" = "1" ]; then
+        echo "${var}=1" >> "${DOT_DIR}/local_install"
+      fi
+    done 3< "${DOT_DIR}/config.txt"
+  else
+    echo "There is no: ${DOT_DIR}/config.txt" >&2
+    echo "  --config does not work without this file" >&2
+    exit 1
+  fi
+fi
+
+if [ -r "${DOT_DIR}/local_install" ]; then
+  echo "Loading local install configuration" >&2
+  source "${DOT_DIR}/local_install"
+fi
+
+exit 32
+
+# 6. Handle your git server ssh key
 if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
   echo "You do not have your git server ssh key setup. I will generate one for you" >&2
   "${DOT_GIT_SSH_KEY_GEN}" -t "${DOT_GIT_SSH_KEY_TYPE}" ${DOT_GIT_SSH_KEY_OTHER_ARGS[@]+"${DOT_GIT_SSH_KEY_OTHER_ARGS[@]}"} -f "${DOT_GIT_SERVER_SSH_KEY}"
@@ -50,7 +92,7 @@ if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
   read -sn 1 -p "Press any key to continue"
 fi
 
-# 4. Clone the rest of the submodules
+# 7. Clone the rest of the submodules
 if git submodule status | grep -e - &>/dev/null; then
   source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
   source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
@@ -64,7 +106,7 @@ if git submodule status | grep -e - &>/dev/null; then
   fi
 fi
 
-# 5. Issue warnings
+# 8. Issue warnings
 if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   if ! "${SYSTEMROOT}/system32/whoami.exe" //groups | grep -q "S-1-5-32-544.*Enabled group"; then
     # In Windows, you need Admin for mklink (or Developer Mode)
@@ -73,7 +115,7 @@ if [ "${OS-}" = "Windows_NT" ] && [ -z "${FORCE_LN+set}" ]; then
   fi
 fi
 
-# 5.5 Simple download files (Todo: Document)
+# 8.5 Simple download files (Todo: Document)
 # Example:
 # DOT_WINDOWS_DOWNLOAD_URLS=(https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe)
 # DOT_LINUX_DOWNLOAD_URLS=(https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64)
@@ -104,7 +146,7 @@ for index in "${!downloads[@]}"; do
   fi
 done
 
-# 5.6 Simple archive downloads (Work in progress)
+# 8.6 Simple archive downloads (Work in progress)
 # example
 # DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-windows-amd64-v1.0.1.zip)
 # DOT_MACOS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-darwin-amd64-v1.0.1.zip)
@@ -167,7 +209,7 @@ for index in "${!downloads[@]}"; do
   simple_download
 done
 
-# # 5.6 Advanced downloads (Work in progress)
+# # 8.6 Advanced downloads (Work in progress)
 # DOT_WINDOWS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-windows-amd64-v1.0.1.zip)
 # DOT_MACOS_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-darwin-amd64-v1.0.1.zip)
 # DOT_LINUX_ARCHIVE_DOWNLOAD_URLS=(https://github.com/sinbad/lfs-folderstore/releases/download/v1.0.1/lfs-folderstore-linux-amd64-v1.0.1.zip)
@@ -215,7 +257,7 @@ done
 #   fi
 # done
 
-# 6. Install files!
+# 9. Install files!
 for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
   if [ ! -d "${files_dir}" ]; then
     continue
@@ -224,6 +266,13 @@ for files_dir in "${DOT_DIR}" "${DOT_DIR}/additional_dots"/*; do
     path_part=$(relative_path "${dotfile}" "${files_dir}/files")
     backup_and_replace "${dotfile}" ~/"${path_part}" "${DOT_BACKUP_DIR}/${path_part}"
   done < <(find "${files_dir}/files" -type f -print0)
+
+  # Attempt at per-file organization
+  if [ -d "${files_dir}/custom.d" ]; then
+    for file in "${files_dir}/custom.d"/*; do
+      source "${file}"
+    done
+  fi
 
   if [ -r "${files_dir}/custom.bsh" ]; then
     unset setup

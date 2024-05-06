@@ -12,7 +12,7 @@ The very first time you set up your dot files repo, you should create an empty d
 
 1. `mkdir ~/.dot`
 2. `cd ~/.dot`
-3. `bash <(curl -L https://raw.githubusercontent.com/andyneff/dot/main/new_repo.bsh)`
+3. `bash <(curl -L https://raw.githubusercontent.com/andyneff/dot_core/main/new_repo.bsh)`
 
 And that is it for getting started. You will have a `files` directory where you place your configuration files, in the same directory structure to mimic how you want them installed in your home directory. E.g.:
 
@@ -38,6 +38,7 @@ Remember not to include any secret information in there (like your ssh private k
 - Supports multiple git repos of your dot files, so you have have some public and some private (license keys, etc...)
 - Download simple files (like `jq`, etc...) from a URL and put them in your `~/bin` directory
 - For everything else, there is a custom install/uninstall steps to support scenarios more complex than a symlink. This is a simple bash file where you can either write all your custom steps in bash, or call your own scripts in whatever language you prefer.
+- Simple `--config` for install to automatically trigger `skip_if_env` checks
 
 # Typical Installation
 
@@ -47,6 +48,7 @@ Once you have your dot files repo setup, make sure your `README.md` reads:
   - For example: `git clone https://github.com/andyneff/dot_files.git ~/.dot`
 2. `~/.dot/install.bsh`
     - The script will walk you trough creating your ssh key on your computer, if you haven't, and cloning the submodules, and then finally installing all your dot files.
+    - Optional `~/.dot/install.bsh --config`
 
 # Updating
 

@@ -40,7 +40,6 @@ function caseify()
       git reset --hard # This is important if gh-pages was just created
       git rm $(git ls-files) || : # noquotes
       cp -a "${DOT_DOCS_CWD}/docs/_build/html"/* ./
-      touch .nojekyll
 
       git add --all
       if [ "$(git status --porcelain -uno | wc -l)" != "0" ]; then

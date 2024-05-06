@@ -92,6 +92,7 @@ EOF
   # 6. .gitignore
   cat - << 'EOF' | write_new_file .gitignore
 bak
+local_install
 EOF
 
   # 7. uninstall.bsh
