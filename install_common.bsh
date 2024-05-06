@@ -78,8 +78,6 @@ if [ -r "${DOT_DIR}/local_install" ]; then
   source "${DOT_DIR}/local_install"
 fi
 
-exit 32
-
 # 6. Handle your git server ssh key
 if [ -n "${DOT_GIT_SSH_KEY_GEN}" ] && [ ! -e "${DOT_GIT_SERVER_SSH_KEY}" ]; then
   echo "You do not have your git server ssh key setup. I will generate one for you" >&2
